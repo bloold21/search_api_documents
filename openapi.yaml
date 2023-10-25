@@ -1,0 +1,322 @@
+openapi: 3.0.1
+info:
+  title: Protoss Part Search API
+  version: 1.0.0
+  description: 一系列用于芯灵前端与后端交互的API。此文档中所列API不会开放给普通用户
+servers:
+  - url: /ga4gh/tes/v1
+tags:
+  - name: BOM
+  - name: Search
+  
+paths:
+  /bom_components_match:
+    post:
+      summary: 为BOM中的物料匹配器件
+      description: ''
+      operationId: ''
+      tags:
+        - BOM
+      requestBody:
+        description: Update an existent pet in the store
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Materials'
+        required: true
+      responses:
+        '200': 
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BOMMatchResult'
+  
+  /get_suppplier_info_by_component_id/{component_id}:
+    get:
+      tags: 
+          - Search
+      summary: 根据id查询供应链信息
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierParts'
+                
+      parameters:
+        - name: component_id
+          in: path
+          description: phyical part id
+          required: True
+          schema:
+            type: integer
+            
+  /search_components_by_description:
+    get:
+      tags: 
+        - Search
+      summary: 按照描述查找器件
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ComponentSearchResult'
+      
+      parameters:
+        - name: comment
+          in: query
+          required: True
+          schema:
+            type: string
+        
+components:
+  schemas:
+    Materials:
+      type: array
+      items:
+        $ref: '#/components/schemas/Material'
+  
+    Material:
+      type: object
+      properties:
+        mpn:
+          type: string
+          example: DSS24
+        manufacturer:
+          type: string
+          example: Yageo
+        package:
+          type: string
+          example: SOT-22
+        reference:
+          type: string
+          example: C1, C2
+        quantity:
+          type: integer
+        sku:
+          type: string
+          example: 1N5819FSTR-ND
+        comment:
+          type: string
+          example: 2.2uH 4.3A
+          
+    Specs:
+      type: array
+      items:
+        type: object
+        properties:
+          name:
+            type: string
+            example: Capacitance
+          value:
+            type: string
+            example: 1 nF
+            
+    
+    TechDocs:
+      type: array
+      items:
+        type: object
+        properties:
+          url:
+            type: string
+            example: //protoss_docs/declecu125.pdf
+          title:
+            type: string
+            example: Accelerometer, Gyroscope, 6 Axis Sensor Output
+          doc_type:
+            type: string
+            enum:
+              - datasheet
+              - tech drawing
+              - pcn
+              - compliance
+              
+    EdaModels:
+      type: array
+      items:
+        type: object
+        properties:
+          uri:
+            type: string
+          model_name:
+            type: string
+          model_type:
+            type: string
+            enum:
+              - 3d
+              - eda
+              - simulation
+          model_sub_type:
+            type: string
+            enum:
+              - step
+              - igs_iges
+              - sehematic
+              - pcb
+              - complied library
+              - bsdl
+              - ibis
+              - thermal model
+              - simplis
+              - s_parameterds
+              - spice
+          supported:
+            type: string
+            enum:
+              - altium designer
+              - eagle
+              - pads_xpedition
+              - orcad_allegro
+              - easyeda
+              - kicad
+    
+    SupplierParts:
+      type: array
+      items:
+        type: object
+        properties:
+          sku:
+            type: string
+            example: ICM-42688-P
+          moq:
+            type: integer
+            example: 1000
+          packaging:
+            type: string
+            example: Tape and Reel
+          factory_lead_dats:
+            type: integer
+            example: 30
+          distributor:
+            type: string
+            example: Digikey
+          distributor_url:
+            type: string
+            example: https://www.digikey.com/en/products/detail/phoenix-contact/1751248/2511016
+          prices:
+            type: array
+            items:
+              type: object
+              properties:
+                currency:
+                  type: string
+                  example: usd
+                price:
+                  type: number
+                  example: 15.0
+          price_break:
+            type: array
+            items:
+              type: integer
+          stock:
+            type: integer
+            example: 15989
+    
+          
+    Part:
+      type: object
+      properties:
+        id:
+          description: physical part id
+          type: integer
+          example: 2958605
+        mpn:
+          type: string
+          example: MURRPE5C1H102J2K!A
+        mpn_normalized:
+          type: string
+          example: murrpe5c1h102j2ka
+        manufacturer:
+          type: string
+          example: Murata
+        category:
+          type: string
+          example: Capacitors/Ceramic Capacitors
+        category_id:
+          type: integer
+          example: 396
+        package:
+          type: string
+          example: SOD323
+        part_desc:
+          description: component description
+          type: string
+        image:
+          type: string
+          description: component image uri
+        
+           
+    PartDetail:
+      allOf: 
+        - $ref: '#/components/schemas/Part'
+        - type: object
+          properties:
+            specs:
+              $ref: '#/components/schemas/Specs'
+            tech_docs:
+              $ref: '#/components/schemas/TechDocs'
+            models:
+               $ref: '#/components/schemas/EdaModels'
+    
+    ComponentSearchResult:
+      type: object
+      properties:
+        hits:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/Part'
+              - type: object
+                properties:
+                  currency:
+                    type: string
+                  price:
+                    type: number
+                  has_stock:
+                    type: boolean
+                  distributor:
+                    type: string
+                    example: Digikey
+                  signals:
+                    description: 搜索程序分析comment得到的搜索关键词
+                    type: array
+                    items:
+                      type: string
+                  highlights:
+                    description: 搜索命中的字段，可用于计算置信度
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        filed:
+                          type: string
+                          enum:
+                            - spec
+                            - key_spec
+                            - mpn
+                            - mpn_normalized
+                            - category
+                            - manufacturer
+                            - package
+                        value:
+                          type: string
+            
+            
+    BOMMatchResult:
+      allOf:
+        - $ref: '#/components/schemas/ComponentSearchResult'
+        - type: object
+          properties:
+            lineNo:
+              type: integer
+              example: 10
+        
+        
+        

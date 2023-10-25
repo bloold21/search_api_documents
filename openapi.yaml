@@ -8,7 +8,6 @@ servers:
 tags:
   - name: BOM
   - name: Search
-  
 paths:
   /bom_components_match:
     post:
@@ -25,17 +24,16 @@ paths:
               $ref: '#/components/schemas/Materials'
         required: true
       responses:
-        '200': 
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BOMMatchResult'
-  
   /get_suppplier_info_by_component_id/{component_id}:
     get:
-      tags: 
-          - Search
+      tags:
+        - Search
       summary: 根据id查询供应链信息
       responses:
         '200':
@@ -44,18 +42,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SupplierParts'
-                
       parameters:
         - name: component_id
           in: path
           description: phyical part id
-          required: True
+          required: true
           schema:
             type: integer
-            
   /search_components_by_description:
     get:
-      tags: 
+      tags:
         - Search
       summary: 按照描述查找器件
       responses:
@@ -67,24 +63,26 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ComponentSearchResult'
-      
       parameters:
         - name: comment
           in: query
-          required: True
+          required: true
           schema:
             type: string
-        
 components:
   schemas:
     Materials:
       type: array
       items:
         $ref: '#/components/schemas/Material'
-  
+        
     Material:
       type: object
       properties:
+        line_no:
+          type: string
+          description: 物料在BOM中的位置
+          example: 10
         mpn:
           type: string
           example: DSS24
@@ -105,7 +103,6 @@ components:
         comment:
           type: string
           example: 2.2uH 4.3A
-          
     Specs:
       type: array
       items:
@@ -117,8 +114,6 @@ components:
           value:
             type: string
             example: 1 nF
-            
-    
     TechDocs:
       type: array
       items:
@@ -137,7 +132,6 @@ components:
               - tech drawing
               - pcn
               - compliance
-              
     EdaModels:
       type: array
       items:
@@ -176,7 +170,6 @@ components:
               - orcad_allegro
               - easyeda
               - kicad
-    
     SupplierParts:
       type: array
       items:
@@ -199,7 +192,8 @@ components:
             example: Digikey
           distributor_url:
             type: string
-            example: https://www.digikey.com/en/products/detail/phoenix-contact/1751248/2511016
+            example: >-
+              https://www.digikey.com/en/products/detail/phoenix-contact/1751248/2511016
           prices:
             type: array
             items:
@@ -210,7 +204,7 @@ components:
                   example: usd
                 price:
                   type: number
-                  example: 15.0
+                  example: 15
           price_break:
             type: array
             items:
@@ -218,8 +212,6 @@ components:
           stock:
             type: integer
             example: 15989
-    
-          
     Part:
       type: object
       properties:
@@ -251,10 +243,8 @@ components:
         image:
           type: string
           description: component image uri
-        
-           
     PartDetail:
-      allOf: 
+      allOf:
         - $ref: '#/components/schemas/Part'
         - type: object
           properties:
@@ -263,8 +253,7 @@ components:
             tech_docs:
               $ref: '#/components/schemas/TechDocs'
             models:
-               $ref: '#/components/schemas/EdaModels'
-    
+              $ref: '#/components/schemas/EdaModels'
     ComponentSearchResult:
       type: object
       properties:
@@ -307,16 +296,48 @@ components:
                             - package
                         value:
                           type: string
-            
-            
+    
     BOMMatchResult:
-      allOf:
-        - $ref: '#/components/schemas/ComponentSearchResult'
-        - type: object
-          properties:
-            lineNo:
-              type: integer
-              example: 10
-        
-        
-        
+      type: object
+      properties:
+        hits:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/Part'
+              - type: object
+                properties:
+                  line_no:
+                    type: integer
+                  currency:
+                    type: string
+                  price:
+                    type: number
+                  has_stock:
+                    type: boolean
+                  distributor:
+                    type: string
+                    example: Digikey
+                  signals:
+                    description: 搜索程序分析comment得到的搜索关键词
+                    type: array
+                    items:
+                      type: string
+                  highlights:
+                    description: 搜索命中的字段，可用于计算置信度
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        filed:
+                          type: string
+                          enum:
+                            - spec
+                            - key_spec
+                            - mpn
+                            - mpn_normalized
+                            - category
+                            - manufacturer
+                            - package
+                        value:
+                          type: string
